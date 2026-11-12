@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phoenix Store</title>
+  <style>
+    :root { --bg:#fff8f1; --ink:#1f1a17; --muted:#6b625c; --brand:#e8590c; --card:#ffffff; --line:#f0e2d6; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+    header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;
+             padding:20px 24px; border-bottom:1px solid var(--line); background:var(--card); }
+    h1 { margin:0; font-size:1.5rem; } h1 span { color:var(--brand); }
+    .badge { font-size:.8rem; padding:6px 10px; border-radius:999px; background:#fff1e6; color:var(--brand); border:1px solid #ffd8bf; }
+    main { max-width:1000px; margin:0 auto; padding:24px 16px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(220px, 1fr)); gap:16px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
+    .card h3 { margin:0 0 6px; font-size:1rem; }
+    .cat { color:var(--muted); font-size:.85rem; }
+    .price { font-size:1.2rem; font-weight:700; margin-top:10px; }
+    .stock { font-size:.8rem; color:var(--muted); }
+    .error { padding:16px; border-radius:12px; background:#ffe3e3; color:#a61e1e; }
+    footer { text-align:center; color:var(--muted); font-size:.8rem; padding:24px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🔥 <span>Phoenix</span> Store</h1>
+    <div class="badge" id="info">Connecting to product API…</div>
+  </header>
+  <main>
+    <div class="grid" id="products"></div>
+  </main>
+  <footer>Project Phoenix · GitOps Mastery · Frontend served by nginx, data from FastAPI</footer>
+
+  <script>
+    const rupees = n => "₹" + n.toLocaleString("en-IN");
+
+    fetch("/api/info")
+      .then(r => r.json())
+      .then(i => {
+        document.getElementById("info").textContent =
+          `API ${i.version} · env: ${i.environment} · pod: ${i.pod}`;
+      })
+      .catch(() => { document.getElementById("info").textContent = "API unreachable"; });
+
+    fetch("/api/products")
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(products => {
+        document.getElementById("products").innerHTML = products.map(p => `
+          <div class="card">
+            <h3>${p.name}</h3>
+            <div class="cat">${p.category}</div>
+            <div class="price">${rupees(p.price)}</div>
+            <div class="stock">${p.stock} in stock</div>
+          </div>`).join("");
+      })
+      .catch(err => {
+        document.getElementById("products").innerHTML =
+          `<div class="error">Could not load products (${err}). Is the product-api pod running?</div>`;
+      });
+  </script>
+</body>
+</html>

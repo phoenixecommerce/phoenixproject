@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: product-api
+  namespace: phoenix
+  labels:
+    app: product-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: product-api
+  template:
+    metadata:
+      labels:
+        app: product-api
+    spec:
+      containers:
+        - name: product-api
+          image: phoenix-product-api:v1
+          imagePullPolicy: IfNotPresent   # use the image loaded into kind
+          ports:
+            - containerPort: 8000
+          env:
+            - name: APP_VERSION
+              value: "v1.0.0"
+            - name: APP_ENV
+              value: "local-kind"
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8000
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: product-api
+  namespace: phoenix
+spec:
+  type: ClusterIP
+  selector:
+    app: product-api
+  ports:
+    - port: 8000
+      targetPort: 8000

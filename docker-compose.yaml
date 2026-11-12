@@ -1,0 +1,29 @@
+---
+version: '3'
+services:
+  product-api:                      # this name must stay "product-api": nginx proxies /api/ to it
+    build: ./backend
+    image: backend:v1
+    environment:
+      APP_VERSION: "v1.0.0"
+      APP_ENV: "local-compose"
+    expose:
+      - "8000"                      # reachable only by other containers, like a ClusterIP Service
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/readyz')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    image: frontend:v1
+    ports:
+      - "8081:80"                   # like the NodePort: browser -> localhost:8081
+    depends_on:
+      product-api:
+        condition: service_healthy  # start nginx only after the API is ready
+    restart: unless-stopped
+...
